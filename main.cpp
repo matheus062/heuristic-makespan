@@ -25,7 +25,12 @@ struct Maquina {
 void GravaArquivo(std::string heuristicaAnalisada, int quantidadeDeTarefasAlocadas, int quantidadesDeMaquinasAlocadas,
                   float valorDeReplicacao, float tempoDeExecucao, int totalDeIteracoes, int makespanInicial,
                   int makespanFinal, int numeroDaExecucao = 0) {
-    std::ofstream arquivo(heuristicaAnalisada + ".txt", std::ios::app);
+    std::string nome_arquivo =
+            heuristicaAnalisada + "_" +
+            std::to_string(quantidadesDeMaquinasAlocadas) + "_" +
+            std::to_string(valorDeReplicacao) +
+            ".txt";
+    std::ofstream arquivo(nome_arquivo, std::ios::app);
 
     if (!arquivo.is_open())
         std::cout << "Não foi possível abrir o arquivo.";
@@ -129,82 +134,91 @@ bool find_next_max_value(Maquina maquina, int &pos, int ms, int ms_n) {
     return true;
 }
 
-int main() {
-
-    // TODO : Fazer um foreach para todas os tamanhos e r's possíveis e salvar num arquivo os seus resultados.
-    // TODO : Fazer um loop com 10 execuções para cada possibilidade
-
-    int tam_m = m_10;
-    float tam_r = r_15;
-
-    int ms, ms_s, ms_f, ms_n, value, pos_min, pos_max_value;
-    int moves = 0;
-    int n = pow(tam_m, tam_r);
+void melhor_melhora(
+        Maquina *maquinas,
+        int tam_m,
+        int tam_n,
+        float tam_r,
+        int qtd
+) {
+    int ms, ms_s, ms_f, ms_n, value, pos_min, pos_max_value, moves = 0;
 
     typedef std::chrono::high_resolution_clock clock;
     typedef std::chrono::duration<float, std::milli> duration;
     static clock::time_point tempo_s;
     duration tempo_exec;
-    Maquina *maquinas = new Maquina[tam_m];
 
-    for(int qtdParaExecutar = 1; qtdParaExecutar <=10; qtdParaExecutar++) {
-        // TODO : extrair para metodo, n deixou eu fazer
-
-        for (int i = 0; i < tam_m; i++) {
-            maquinas[i] = Maquina(n);
-        }
-        srand(time(nullptr));
-
-        for (int i = 0; i < n; i++) {
-            value = (rand() % 100);
-            maquinas[0].tarefas[i] = (value > 0) ? value : 1;
-            maquinas[0].pos++;
-        }
-
-        ms_s = ms_total(maquinas, tam_m);
-        tempo_s = clock::now();
-
-        while (true) {
-            ms = ms_total(maquinas, tam_m);
-            pos_min = pos_ms_min(maquinas, tam_m);
-
-            if (pos_min == 0) {
-                break;
-            }
-
-            ms_n = ms_maquina(maquinas[pos_min]);
-            pos_max_value = search_max_value(maquinas[0]);
-
-            if ((ms_n + maquinas[0].tarefas[pos_max_value] > ms) &&
-                !find_next_max_value(maquinas[0], pos_max_value, ms, ms_n)) {
-                break;
-            }
-
-            maquinas[pos_min].tarefas[++maquinas[pos_min].pos] = maquinas[0].tarefas[pos_max_value];
-
-            for (int i = pos_max_value; i <= maquinas[0].pos; i++) {
-                maquinas[0].tarefas[i] = maquinas[0].tarefas[i + 1];
-                maquinas[0].tarefas[i + 1] = 0;
-            }
-
-            maquinas[0].pos--;
-            moves++;
-        }
-
-        ms_f = ms_total(maquinas, tam_m);
-        tempo_exec = clock::now() - tempo_s;
-
-        GravaArquivo(
-                "Busca Local - Melhor melhora",
-                n,
-                tam_m,
-                tam_r,
-                tempo_exec.count(),
-                moves,
-                ms_s,
-                ms_f,
-                qtdParaExecutar
-        );
+    for (int i = 0; i < tam_m; i++) {
+        maquinas[i] = Maquina(tam_n);
     }
+
+    for (int i = 0; i < tam_n; i++) {
+        value = (rand() % 100);
+        maquinas[0].tarefas[i] = (value > 0) ? value : 1;
+        maquinas[0].pos++;
+    }
+
+    ms_s = ms_total(maquinas, tam_m);
+    tempo_s = clock::now();
+
+    while (true) {
+        ms = ms_total(maquinas, tam_m);
+        pos_min = pos_ms_min(maquinas, tam_m);
+
+        if (pos_min == 0) {
+            break;
+        }
+
+        ms_n = ms_maquina(maquinas[pos_min]);
+        pos_max_value = search_max_value(maquinas[0]);
+
+        if ((ms_n + maquinas[0].tarefas[pos_max_value] > ms) &&
+            !find_next_max_value(maquinas[0], pos_max_value, ms, ms_n)) {
+            break;
+        }
+
+        maquinas[pos_min].tarefas[++maquinas[pos_min].pos] = maquinas[0].tarefas[pos_max_value];
+
+        for (int i = pos_max_value; i <= maquinas[0].pos; i++) {
+            maquinas[0].tarefas[i] = maquinas[0].tarefas[i + 1];
+            maquinas[0].tarefas[i + 1] = 0;
+        }
+
+        maquinas[0].pos--;
+        moves++;
+    }
+
+    ms_f = ms_total(maquinas, tam_m);
+    tempo_exec = clock::now() - tempo_s;
+
+    GravaArquivo(
+            "Busca Local - Melhor melhora",
+            tam_n,
+            tam_m,
+            tam_r,
+            tempo_exec.count(),
+            moves,
+            ms_s,
+            ms_f,
+            qtd
+    );
+}
+
+int main() {
+
+    float const r_x[] = {1.5, 2.0};
+    int const m_x[] = {10, 20, 50};
+
+    srand(time(nullptr));
+
+    for (int qtdParaExecutar = 1; qtdParaExecutar <= 10; qtdParaExecutar++) {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 3; j++) {
+                Maquina *maquinas = new Maquina[m_x[j]];
+                melhor_melhora(maquinas, m_x[j], pow(m_x[j], r_x[i]), r_x[i], qtdParaExecutar);
+            }
+        }
+    }
+
     return 0;
 }
