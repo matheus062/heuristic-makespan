@@ -25,8 +25,11 @@ void GravaArquivo(std::string heuristicaAnalisada, int quantidadeDeTarefasAlocad
             ".txt";
     std::ofstream arquivo(nome_arquivo, std::ios::app);
 
-    if (!arquivo.is_open())
+    if (!arquivo.is_open()) {
         std::cout << "Não foi possível abrir o arquivo.";
+
+        return;
+    }
 
     arquivo << "Execucao: " << numeroDaExecucao << std::endl;
     arquivo << "Heuristica: " << heuristicaAnalisada << std::endl;
@@ -205,10 +208,10 @@ int main() {
     srand(time(nullptr));
 
     for (int qtdParaExecutar = 1; qtdParaExecutar <= 10; qtdParaExecutar++) {
-        for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < 3; j++) {
-                Maquina *maquinas = new Maquina[m_x[j]];
-                melhor_melhora(maquinas, m_x[j], pow(m_x[j], r_x[i]), r_x[i], qtdParaExecutar);
+        for (float i: r_x) {
+            for (int j: m_x) {
+                auto *maquinas = new Maquina[j];
+                melhor_melhora(maquinas, j, pow(j, i), i, qtdParaExecutar);
             }
         }
     }
