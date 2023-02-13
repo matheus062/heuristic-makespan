@@ -3,13 +3,6 @@
 #include <chrono>
 #include <fstream>
 
-float const r_15 = 1.5;
-float const r_20 = 2.0;
-
-int const m_10 = 10;
-int const m_20 = 20;
-int const m_50 = 50;
-
 struct Maquina {
     int *tarefas;
     int pos;
@@ -37,8 +30,8 @@ void GravaArquivo(std::string heuristicaAnalisada, int quantidadeDeTarefasAlocad
 
     arquivo << "Execucao: " << numeroDaExecucao << std::endl;
     arquivo << "Heuristica: " << heuristicaAnalisada << std::endl;
-    arquivo << "Valor de N: " << quantidadeDeTarefasAlocadas << std::endl;
-    arquivo << "Valor de M: " << quantidadesDeMaquinasAlocadas << std::endl;
+    arquivo << "Quantidade de tarefas (Valor de N): " << quantidadeDeTarefasAlocadas << std::endl;
+    arquivo << "Quantidade de Maquinas (Valor de M): " << quantidadesDeMaquinasAlocadas << std::endl;
     arquivo << "Valor de Replicacao: " << valorDeReplicacao << std::endl;
     arquivo << "Tempo de execução (ms): " << tempoDeExecucao << std::endl;
     arquivo << "Total de iteracoes: " << totalDeIteracoes << std::endl;
