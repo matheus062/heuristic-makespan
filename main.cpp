@@ -1,5 +1,7 @@
 #include <iostream>
-#include <math.h>
+#include <cmath>
+#include <chrono>
+#include <fstream>
 
 float const r_15 = 1.5;
 float const r_20 = 2.0;
@@ -9,9 +11,40 @@ int const m_20 = 20;
 int const m_50 = 50;
 
 struct Maquina {
-    int tarefas[35] = {0};
-    int pos = -1;
+    int *tarefas;
+    int pos;
+
+    Maquina() : tarefas(), pos() {}
+
+    explicit Maquina(int n) {
+        this->pos = -1;
+        this->tarefas = new int[n];
+    }
 };
+
+void GravaArquivo(std::string heuristicaAnalisada, int quantidadeDeTarefasAlocadas, int quantidadesDeMaquinasAlocadas,
+                  float valorDeReplicacao, float tempoDeExecucao, int totalDeIteracoes, int makespanInicial,
+                  int makespanFinal, int numeroDaExecucao = 0) {
+    std::ofstream arquivo(heuristicaAnalisada + ".txt", std::ios::app);
+
+    if (!arquivo.is_open())
+        std::cout << "Não foi possível abrir o arquivo.";
+
+    arquivo << "Execucao: " << numeroDaExecucao << std::endl;
+    arquivo << "Heuristica: " << heuristicaAnalisada << std::endl;
+    arquivo << "Valor de N: " << quantidadeDeTarefasAlocadas << std::endl;
+    arquivo << "Valor de M: " << quantidadesDeMaquinasAlocadas << std::endl;
+    arquivo << "Valor de Replicacao: " << valorDeReplicacao << std::endl;
+    arquivo << "Tempo de execução (ms): " << tempoDeExecucao << std::endl;
+    arquivo << "Total de iteracoes: " << totalDeIteracoes << std::endl;
+    arquivo << "Makespan inicial: " << makespanInicial << std::endl;
+    arquivo << "Makespan final: " << makespanFinal << std::endl;
+    arquivo << std::endl << std::endl;
+
+    arquivo.close();
+
+    std::cout << "Texto gravado com sucesso no arquivo." << std::endl;
+}
 
 int ms_maquina(Maquina maquina) {
     if (maquina.pos == -1) {
@@ -98,66 +131,80 @@ bool find_next_max_value(Maquina maquina, int &pos, int ms, int ms_n) {
 
 int main() {
 
+    // TODO : Fazer um foreach para todas os tamanhos e r's possíveis e salvar num arquivo os seus resultados.
+    // TODO : Fazer um loop com 10 execuções para cada possibilidade
+
     int tam_m = m_10;
     float tam_r = r_15;
 
-    int n = pow(tam_m, tam_r);
-    Maquina maquinas[tam_m];
-
-    int ms;
-
-    int pos_min;
-    int pos_max_value;
-
-    bool run = true;
-
-    int value;
-    srand(time(NULL));
-
+    int ms, ms_s, ms_f, ms_n, value, pos_min, pos_max_value;
     int moves = 0;
+    int n = pow(tam_m, tam_r);
 
-    for (int i = 0; i < n; i++) {
-        value = (rand() % 100);
-        maquinas[0].tarefas[i] = (value > 0) ? value : 1;
-        maquinas[0].pos++;
+    typedef std::chrono::high_resolution_clock clock;
+    typedef std::chrono::duration<float, std::milli> duration;
+    static clock::time_point tempo_s;
+    duration tempo_exec;
+    Maquina *maquinas = new Maquina[tam_m];
+
+    for(int qtdParaExecutar = 1; qtdParaExecutar <=10; qtdParaExecutar++) {
+        // TODO : extrair para metodo, n deixou eu fazer
+
+        for (int i = 0; i < tam_m; i++) {
+            maquinas[i] = Maquina(n);
+        }
+        srand(time(nullptr));
+
+        for (int i = 0; i < n; i++) {
+            value = (rand() % 100);
+            maquinas[0].tarefas[i] = (value > 0) ? value : 1;
+            maquinas[0].pos++;
+        }
+
+        ms_s = ms_total(maquinas, tam_m);
+        tempo_s = clock::now();
+
+        while (true) {
+            ms = ms_total(maquinas, tam_m);
+            pos_min = pos_ms_min(maquinas, tam_m);
+
+            if (pos_min == 0) {
+                break;
+            }
+
+            ms_n = ms_maquina(maquinas[pos_min]);
+            pos_max_value = search_max_value(maquinas[0]);
+
+            if ((ms_n + maquinas[0].tarefas[pos_max_value] > ms) &&
+                !find_next_max_value(maquinas[0], pos_max_value, ms, ms_n)) {
+                break;
+            }
+
+            maquinas[pos_min].tarefas[++maquinas[pos_min].pos] = maquinas[0].tarefas[pos_max_value];
+
+            for (int i = pos_max_value; i <= maquinas[0].pos; i++) {
+                maquinas[0].tarefas[i] = maquinas[0].tarefas[i + 1];
+                maquinas[0].tarefas[i + 1] = 0;
+            }
+
+            maquinas[0].pos--;
+            moves++;
+        }
+
+        ms_f = ms_total(maquinas, tam_m);
+        tempo_exec = clock::now() - tempo_s;
+
+        GravaArquivo(
+                "Busca Local - Melhor melhora",
+                n,
+                tam_m,
+                tam_r,
+                tempo_exec.count(),
+                moves,
+                ms_s,
+                ms_f,
+                qtdParaExecutar
+        );
     }
-
-    int ms_n;
-
-    do {
-        ms = ms_total(maquinas, tam_m);
-        pos_min = pos_ms_min(maquinas, tam_m);
-
-        if (pos_min == 0) {
-            break;
-        }
-
-        ms_n = ms_maquina(maquinas[pos_min]);
-        pos_max_value = search_max_value(maquinas[0]);
-
-        if ((ms_n + maquinas[0].tarefas[pos_max_value] > ms) && !find_next_max_value(maquinas[0], pos_max_value, ms, ms_n)) {
-            break;
-        }
-
-        maquinas[pos_min].tarefas[++maquinas[pos_min].pos] = maquinas[0].tarefas[pos_max_value];
-
-        for (int i = pos_max_value; i <= maquinas[0].pos; i++) {
-            maquinas[0].tarefas[i] = maquinas[0].tarefas[i + 1];
-            maquinas[0].tarefas[i + 1] = 0;
-        }
-
-        maquinas[0].pos--;
-        moves++;
-
-    } while (run);
-
-
     return 0;
 }
-
-/*    M1   M2  M3
- *  | 29 |   |   |
- *  | 17 |   |   |
- *  | 14 |   |   |
- *  | 10 |   |   |
- */
