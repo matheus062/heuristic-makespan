@@ -5,10 +5,13 @@
 #include <algorithm>
 
 int **lista_tabu;
+int moves;
+int moveTo;
+int moveFrom;
 
 struct Maquina {
 public:
-    int *tarefas;
+    int tarefas[200] = {0};
     int pos;
     int n;
 
@@ -16,16 +19,14 @@ public:
 
     explicit Maquina(int n) {
         this->pos = -1;
-        this->tarefas = new int[n];
         this->n = n;
     }
 
-    Maquina(const Maquina &toCopy) {
-        this->tarefas = new int[toCopy.n];
-        this->pos = toCopy.pos;
-        this->n = toCopy.n;
-        std::copy(toCopy.tarefas, toCopy.tarefas + toCopy.n, this->tarefas);
-    }
+//    Maquina(const Maquina &toCopy) {
+//        this->pos = toCopy.pos;
+//        this->n = toCopy.n;
+//        std::copy(toCopy.tarefas, toCopy.tarefas + toCopy.n, this->tarefas);
+//    }
 };
 
 void GravaArquivo(std::string heuristicaAnalisada, int quantidadeDeTarefasAlocadas, int quantidadesDeMaquinasAlocadas,
@@ -60,7 +61,7 @@ void GravaArquivo(std::string heuristicaAnalisada, int quantidadeDeTarefasAlocad
     std::cout << "Texto gravado com sucesso no arquivo." << std::endl;
 }
 
-int ms_maquina(Maquina maquina) {
+int ms_maquina(const Maquina& maquina) {
     if (maquina.pos == -1) {
         return 0;
     }
@@ -103,20 +104,17 @@ bool localiza_tabu(Maquina *maquinas, int tam_m, int interacoes) {
 }
 
 bool next_move(
-        int &moveFrom,
-        int &moveTo,
         Maquina *maquinas,
         int tam_m,
         bool busca_tabu,
-        int interacoes,
-        int &moves
+        int interacoes
 ) {
     bool found = false;
     int ms_min, ms, min_k, min_l;
-    Maquina* clone_maquinas = new Maquina[10];
+    Maquina clone_maquinas[10];
 
     for (int z = 0; z < tam_m; z++) {
-        clone_maquinas[z] = Maquina(maquinas[z]);
+        clone_maquinas[z] = maquinas[z];
     }
 
     if (busca_tabu) {
@@ -162,12 +160,6 @@ bool next_move(
         moveTo = min_l;
     }
 
-    for(int k = 0; k < tam_m; k++) {
-        delete[] clone_maquinas[k].tarefas;
-    }
-
-    delete[] clone_maquinas;
-
     return found;
 }
 
@@ -200,9 +192,9 @@ void busca_tabu(
 
     int interacoes = 0;
     // TODO : Depois programar o delta certinho
-    int max_interacoes = tam_n * 0.09;
+    int max_interacoes = tam_n * 0.01;
 
-    Maquina* clone_maquinas = new Maquina[tam_m];
+    Maquina clone_maquinas[tam_m];
 
     if (max_interacoes < 10) {
         max_interacoes = 10;
@@ -217,22 +209,19 @@ void busca_tabu(
             lista_tabu[i][j] = -2;
         }
     }
-
-    int moveFrom;
-    int moveTo;
     bool run = true;
 
     while (run) {
         ms = ms_total(maquinas, tam_m);
 
-        if (next_move(moveFrom, moveTo, maquinas, tam_m, false, interacoes, moves)) {
+        if (next_move(maquinas, tam_m, false, interacoes)) {
             maquinas[moveTo].tarefas[++maquinas[moveTo].pos] = maquinas[moveFrom].tarefas[maquinas[moveFrom].pos--];
 
             continue;
         }
 
         for (int z = 0; z < tam_m; z++) {
-            clone_maquinas[z] = Maquina(maquinas[z]);
+            clone_maquinas[z] = maquinas[z];
         }
 
         while (interacoes < max_interacoes) {
@@ -241,7 +230,7 @@ void busca_tabu(
             }
             interacoes++;
 
-            if (!next_move(moveFrom, moveTo, clone_maquinas, tam_m, true, interacoes, moves)) {
+            if (!next_move(clone_maquinas, tam_m, true, interacoes)) {
                 run = false;
 
                 break;
@@ -259,8 +248,6 @@ void busca_tabu(
                 }
 
                 for (int i = 0; i < max_interacoes; i++) {
-                    lista_tabu[i] = new int[tam_n];
-
                     for (int j = 0; j < tam_m; j++) {
                         lista_tabu[i][j] = -2;
                     }
@@ -274,11 +261,6 @@ void busca_tabu(
             }
         }
 
-        for(int k = 0; k < tam_m; k++) {
-            delete[] clone_maquinas[k].tarefas;
-        }
-
-        delete[] clone_maquinas;
     }
 
     ms_f = ms_total(maquinas, tam_m);
@@ -303,17 +285,10 @@ int main() {
     int const m_x[] = {10, 20, 50};
 
     srand(time(nullptr));
-    auto *maquinas = new Maquina[m_x[2]];
+    auto *maquinas = new Maquina[m_x[1]];
 
-    busca_tabu(maquinas, m_x[2], pow(m_x[2], r_x[1]), r_x[1], 0);
+    busca_tabu(maquinas, m_x[1], pow(m_x[1], r_x[0]), r_x[0], 0);
 
-
-//    for (int qtdParaExecutar = 1; qtdParaExecutar <= 10; qtdParaExecutar++) {
-//        for (float i: r_x) {
-//            for (int j: m_x) {
-//            }
-//        }
-//    }
 
     return 0;
 }

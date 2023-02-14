@@ -8,4 +8,4 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
 
 set(CMAKE_CXX_FLAGS "-fexceptions")
 
-add_executable(heuristic_makespan main.cpp busca_tabu.cpp)
+add_executable(heuristic_makespan busca_tabu.cpp)
