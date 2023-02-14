@@ -113,7 +113,7 @@ bool next_move(
 ) {
     bool found = false;
     int ms_min, ms, min_k, min_l;
-    Maquina clone_maquinas[tam_m];
+    Maquina* clone_maquinas = new Maquina[10];
 
     for (int z = 0; z < tam_m; z++) {
         clone_maquinas[z] = Maquina(maquinas[z]);
@@ -132,7 +132,7 @@ bool next_move(
             }
 
             clone_maquinas[l].tarefas[++clone_maquinas[l].pos] = clone_maquinas[k].tarefas[clone_maquinas[k].pos--];
-            moves++;
+//            moves++;
             ms = ms_total(clone_maquinas, tam_m);
 
             if ((ms < ms_min) || (ms_min == -1)) {
@@ -153,7 +153,7 @@ bool next_move(
             }
 
             clone_maquinas[k].tarefas[++clone_maquinas[k].pos] = clone_maquinas[l].tarefas[clone_maquinas[l].pos--];
-            moves++;
+//            moves++;
         }
     }
 
@@ -162,7 +162,11 @@ bool next_move(
         moveTo = min_l;
     }
 
-    // delete []clone_maquinas;
+    for(int k = 0; k < tam_m; k++) {
+        delete[] clone_maquinas[k].tarefas;
+    }
+
+    delete[] clone_maquinas;
 
     return found;
 }
@@ -198,7 +202,7 @@ void busca_tabu(
     // TODO : Depois programar o delta certinho
     int max_interacoes = tam_n * 0.09;
 
-    Maquina clone_maquinas[tam_m];
+    Maquina* clone_maquinas = new Maquina[tam_m];
 
     if (max_interacoes < 10) {
         max_interacoes = 10;
@@ -270,7 +274,11 @@ void busca_tabu(
             }
         }
 
+        for(int k = 0; k < tam_m; k++) {
+            delete[] clone_maquinas[k].tarefas;
+        }
 
+        delete[] clone_maquinas;
     }
 
     ms_f = ms_total(maquinas, tam_m);
@@ -295,15 +303,17 @@ int main() {
     int const m_x[] = {10, 20, 50};
 
     srand(time(nullptr));
+    auto *maquinas = new Maquina[m_x[2]];
 
-    for (int qtdParaExecutar = 1; qtdParaExecutar <= 10; qtdParaExecutar++) {
-        for (float i: r_x) {
-            for (int j: m_x) {
-                auto *maquinas = new Maquina[j];
-                busca_tabu(maquinas, j, pow(j, i), i, qtdParaExecutar);
-            }
-        }
-    }
+    busca_tabu(maquinas, m_x[2], pow(m_x[2], r_x[1]), r_x[1], 0);
+
+
+//    for (int qtdParaExecutar = 1; qtdParaExecutar <= 10; qtdParaExecutar++) {
+//        for (float i: r_x) {
+//            for (int j: m_x) {
+//            }
+//        }
+//    }
 
     return 0;
 }
